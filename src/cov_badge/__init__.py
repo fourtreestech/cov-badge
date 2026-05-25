@@ -2,15 +2,23 @@ import json
 from typing import Any
 
 import typer
+from pydantic_settings import BaseSettings
+
+
+class AppConfig(BaseSettings):
+    cov_percent_path: list[str] = ["totals", "percent_statements_covered_display"]
+
 
 app = typer.Typer()
 
 
 @app.command()
 def main() -> None:
+    config = AppConfig()
     print("Loading JSON file...")
     obj = load_json()
-    update_badge(get_cov_percent(obj, ["totals", "percent_statements_covered_display"]))
+    print("Creating coverage badge...")
+    update_badge(get_cov_percent(obj, config.cov_percent_path))
 
 
 def update_badge(coverage: int):
