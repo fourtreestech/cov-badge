@@ -1,4 +1,5 @@
 import json
+from operator import itemgetter
 from typing import Any
 
 import typer
@@ -6,7 +7,7 @@ from pydantic_settings import BaseSettings
 
 
 class AppConfig(BaseSettings):
-    cov_percent_path: list[str] = ["totals", "percent_statements_covered_display"]
+    percent_path: list[str] = ["totals", "percent_statements_covered_display"]
 
 
 app = typer.Typer()
@@ -18,7 +19,7 @@ def main() -> None:
     print("Loading JSON file...")
     obj = load_json()
     print("Creating coverage badge...")
-    update_badge(get_cov_percent(obj, config.cov_percent_path))
+    update_badge(get_cov_percent(obj, config.percent_path))
 
 
 def update_badge(coverage: int):
@@ -58,6 +59,34 @@ def update_badge(coverage: int):
 def create_badge(coverage: int) -> str:
     """Create the badge script"""
     return f"![coverage](https://img.shields.io/badge/coverage-{coverage}%25-green)\n"
+
+
+def get_color(value: int, color_thresholds: list[tuple[int, str]]) -> str:
+    """Get the color corresponding to the given value.
+
+    `color_thresholds` is a list of `[int, str]` tuples,
+    where the first element is a minimum value and the second
+    is the color that will be applied from that value.
+    Thresholds should be supplied in descending order, and the
+    first element of the final tuple should be 0.
+
+    Examples:
+        >>> thresholds = [(100, "green"), (80, "orange"), (0, "red")]
+        >>> get_color(100, thresholds)
+        'green'
+        >>> get_color(99, thresholds)
+        'orange'
+        >>> get_color(79, thresholds)
+        'red'
+    """
+    # Manage unsorted data
+    sorted_thresholds = sorted(color_thresholds, key=itemgetter(0), reverse=True)
+    for min_value, color in sorted_thresholds:
+        if value >= min_value:
+            return color
+
+    # No zero value: return the lowest value color
+    return sorted_thresholds[-1][1]
 
 
 def get_value_at_path(obj: dict[str, Any], path: list[str]) -> Any:

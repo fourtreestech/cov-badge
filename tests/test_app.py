@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from cov_badge import get_cov_percent, get_value_at_path
+from cov_badge import get_color, get_cov_percent, get_value_at_path
 
 
 class TestGetCovPercent:
@@ -34,3 +34,17 @@ class TestGetValueAtPath:
         obj = {"totals": str(coverage)}
         with pytest.raises(TypeError):
             get_value_at_path(obj, ["totals", "percent_statements_covered_display"])
+
+
+class TestGetColor:
+    def test_returns_color(self):
+        thresholds = [(100, "green"), (80, "orange"), (0, "red")]
+        assert get_color(80, thresholds) == "orange"
+
+    def test_handles_unsorted_thresholds(self):
+        thresholds = [(0, "red"), (80, "orange"), (100, "green")]
+        assert get_color(80, thresholds) == "orange"
+
+    def test_handles_no_zero(self):
+        thresholds = [(50, "red"), (80, "orange"), (100, "green")]
+        assert get_color(0, thresholds) == "red"
