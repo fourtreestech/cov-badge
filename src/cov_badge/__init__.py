@@ -10,7 +10,7 @@ app = typer.Typer()
 def main() -> None:
     print("Loading JSON file...")
     obj = load_json()
-    update_badge(get_cov_percent(obj))
+    update_badge(get_cov_percent(obj, ["totals", "percent_statements_covered_display"]))
 
 
 def update_badge(coverage: int):
@@ -52,9 +52,54 @@ def create_badge(coverage: int) -> str:
     return f"![coverage](https://img.shields.io/badge/coverage-{coverage}%25-green)\n"
 
 
-def get_cov_percent(obj: dict[str, Any]) -> int:
-    """Get percentage coverage for badge display"""
-    return int(obj["totals"]["percent_statements_covered_display"])
+def get_value_at_path(obj: dict[str, Any], path: list[str]) -> Any:
+    """Navigate a nested dict using a list of keys.
+
+    Examples:
+        >>> obj = { "level1": { "level2": "value" } }
+        >>> get_value_at_path(obj, ["level1", "level2"])
+        'value'
+
+    Args:
+        obj: `dict` to navigate.
+        path: Hierarchy of keys to navigate to access the value.
+
+    Returns:
+        The value found at the end of the path.
+
+    Raises:
+        TypeError: If attempting to traverse anything other than a `dict`.
+        KeyError: If an invalid key is provided.
+    """
+    current = obj
+    for key in path:
+        if not isinstance(current, dict):
+            raise TypeError(
+                f"Expected a dict but got {type(current).__name__} at key '{key}'"
+            )
+        if key not in current:
+            raise KeyError(f"Key '{key}' not found")
+        current = current[key]
+    return current
+
+
+def get_cov_percent(obj: dict[str, Any], path: list[str]) -> int:
+    """Get percentage coverage for badge display.
+
+    Examples:
+        >>> obj = {"totals": {"percent_statements_covered_display": "100"}}
+        >>> path = ["totals", "percent_statements_covered_display"]
+        >>> get_cov_percent(obj, path)
+        100
+
+    Args:
+        obj: `dict` containing the coverage percentage value.
+        path: Keys to navigate to get to the value.
+
+    Returns:
+        The value at `path`, coerced to an int
+    """
+    return int(get_value_at_path(obj, path))
 
 
 def load_json() -> dict:

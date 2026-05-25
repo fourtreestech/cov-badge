@@ -18,6 +18,9 @@ cov-badge = "cov_badge:main"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.pytest]
+addopts = ["--doctest-modules"]
+
 [tool.ruff.lint]
 select = ["F", "I"]
 
