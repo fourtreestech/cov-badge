@@ -4,6 +4,7 @@ from typing import Any
 
 import typer
 from pydantic_settings import BaseSettings
+from rich.console import Console
 
 DEFAULT_COLOR_THRESHOLDS = [
     (100, "brightgreen"),
@@ -22,20 +23,30 @@ class AppConfig(BaseSettings):
 
 
 app = typer.Typer()
+console = Console(highlight=False)
 
 
 @app.command()
 def main() -> None:
+    """Main app entry point."""
+    # Set up config
     config = AppConfig()
-    print("Loading JSON file...")
+
+    # Load JSON file
+    console.print("Loading JSON file...")
     obj = load_json(config.json_file)
-    print("Creating coverage badge...")
+
+    # Create badge
+    coverage = get_cov_percent(obj, config.percent_path)
+    console.print(f"Creating coverage badge ({coverage}%)...")
     update_badge(
-        get_cov_percent(obj, config.percent_path),
+        coverage,
         config.color_thresholds,
         config.readme_file,
     )
-    print("Badge created.")
+
+    # Sign off
+    console.print("[bold green]Badge created.[/]\n")
 
 
 def update_badge(
