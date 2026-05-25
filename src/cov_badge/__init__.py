@@ -17,6 +17,7 @@ DEFAULT_COLOR_THRESHOLDS = [
 class AppConfig(BaseSettings):
     percent_path: list[str] = ["totals", "percent_statements_covered_display"]
     color_thresholds: list[tuple[int, str]] = DEFAULT_COLOR_THRESHOLDS
+    readme_file: str = "README.md"
 
 
 app = typer.Typer()
@@ -28,13 +29,44 @@ def main() -> None:
     print("Loading JSON file...")
     obj = load_json()
     print("Creating coverage badge...")
-    update_badge(get_cov_percent(obj, config.percent_path), config.color_thresholds)
+    update_badge(
+        get_cov_percent(obj, config.percent_path),
+        config.color_thresholds,
+        config.readme_file,
+    )
 
 
-def update_badge(coverage: int, color_thresholds: list[tuple[int, str]]):
-    """Update the badge in the README"""
+def update_badge(
+    coverage: int, color_thresholds: list[tuple[int, str]], readme_file: str
+):
+    """Update the badge in the README file.
+
+    `coverage` is the total test coverage percentage.
+
+    `color_thresholds` is a list of `[int, str]` tuples,
+    where the first element is a minimum value and the second
+    is the `Shields.io` color that will be applied from that value.
+    Thresholds should be supplied in descending order, and the
+    first element of the final tuple should be 0.
+
+    `readme_file` should be the name of a file in the current working directory
+    (usually the project root).
+
+    If there is already a coverage badge in the README it will be updated
+    with the value of `coverage` and its corresponding color.
+
+    If README doesn't contain a badge one will be added, either directly following
+    the last (other) badge already in the README, or if there are no badges,
+    directly after the main title (marked with '###'). If there is no main title
+    and no badges, the coverage badge will be inserted immediately after the first line.
+
+    Args:
+        coverage: Coverage value (0-100).
+        color_thresholds: List of thresholds defining a colour for any given value.
+        readme_file: Name of the README file to update.
+    """
     # Open README file
-    with open("README.md") as file:
+    with open(readme_file) as file:
         readme_lines = file.readlines()
 
     # Find the coverage line if there is one
@@ -61,7 +93,7 @@ def update_badge(coverage: int, color_thresholds: list[tuple[int, str]]):
     readme_lines[index] = create_badge(coverage, color_thresholds)
 
     # Write README file
-    with open("README.md", mode="w") as file:
+    with open(readme_file, mode="w") as file:
         file.writelines(readme_lines)
 
 
