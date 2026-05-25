@@ -8,3 +8,11 @@ wheels/
 
 # Virtual environments
 .venv
+
+# System files
+.DS_Store
+
+# Test coverage
+.coverage
+
+
