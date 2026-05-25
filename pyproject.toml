@@ -1,0 +1,17 @@
+[project]
+name = "cov-badge"
+version = "0.1.0"
+description = "cov-badge creates a coverage badge from a pytest-cov JSON file, and adds it to your project's README"
+readme = "README.md"
+authors = [
+    { name = "Neil Martin", email = "neil@fourtrees.tech" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[project.scripts]
+cov-badge = "cov_badge:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
