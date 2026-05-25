@@ -5,9 +5,18 @@ from typing import Any
 import typer
 from pydantic_settings import BaseSettings
 
+DEFAULT_COLOR_THRESHOLDS = [
+    (100, "brightgreen"),
+    (90, "green"),
+    (70, "yellow"),
+    (50, "orange"),
+    (0, "red"),
+]
+
 
 class AppConfig(BaseSettings):
     percent_path: list[str] = ["totals", "percent_statements_covered_display"]
+    color_thresholds: list[tuple[int, str]] = DEFAULT_COLOR_THRESHOLDS
 
 
 app = typer.Typer()
@@ -19,10 +28,10 @@ def main() -> None:
     print("Loading JSON file...")
     obj = load_json()
     print("Creating coverage badge...")
-    update_badge(get_cov_percent(obj, config.percent_path))
+    update_badge(get_cov_percent(obj, config.percent_path), config.color_thresholds)
 
 
-def update_badge(coverage: int):
+def update_badge(coverage: int, color_thresholds: list[tuple[int, str]]):
     """Update the badge in the README"""
     # Open README file
     with open("README.md") as file:
@@ -49,16 +58,34 @@ def update_badge(coverage: int):
         readme_lines.insert(index, "")
 
     # Update badge
-    readme_lines[index] = create_badge(coverage)
+    readme_lines[index] = create_badge(coverage, color_thresholds)
 
     # Write README file
     with open("README.md", mode="w") as file:
         file.writelines(readme_lines)
 
 
-def create_badge(coverage: int) -> str:
-    """Create the badge script"""
-    return f"![coverage](https://img.shields.io/badge/coverage-{coverage}%25-green)\n"
+def create_badge(coverage: int, color_thresholds: list[tuple[int, str]]) -> str:
+    """Create the badge script.
+
+    `color_thresholds` is a list of `[int, str]` tuples,
+    where the first element is a minimum value and the second
+    is the `Shields.io` color that will be applied from that value.
+    Thresholds should be supplied in descending order, and the
+    first element of the final tuple should be 0.
+
+    The badge script returned can be pasted directly into your `README.md` file
+    and will show a coverage badge with the appropriate color and value.
+
+    Args:
+        coverage: Coverage value (0-100).
+        color_thresholds: List of thresholds defining a colour for any given value.
+
+    Returns:
+        `Shields.io` badge script.
+    """
+    color = get_color(coverage, color_thresholds)
+    return f"![coverage](https://img.shields.io/badge/coverage-{coverage}%25-{color})\n"
 
 
 def get_color(value: int, color_thresholds: list[tuple[int, str]]) -> str:
@@ -78,6 +105,13 @@ def get_color(value: int, color_thresholds: list[tuple[int, str]]) -> str:
         'orange'
         >>> get_color(79, thresholds)
         'red'
+
+    Args:
+        value: Coverage value.
+        color_thresholds: List of thresholds defining a colour for any given value.
+
+    Returns:
+        Color corresponding to the given value.
     """
     # Manage unsorted data
     sorted_thresholds = sorted(color_thresholds, key=itemgetter(0), reverse=True)

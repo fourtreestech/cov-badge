@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from cov_badge import get_color, get_cov_percent, get_value_at_path
+from cov_badge import create_badge, get_color, get_cov_percent, get_value_at_path
 
 
 class TestGetCovPercent:
@@ -48,3 +48,16 @@ class TestGetColor:
     def test_handles_no_zero(self):
         thresholds = [(50, "red"), (80, "orange"), (100, "green")]
         assert get_color(0, thresholds) == "red"
+
+
+class TestCreateBadge:
+    def test_returns_coverage_value(self):
+        thresholds = [(100, "green"), (80, "orange"), (0, "red")]
+        coverage = random.randint(0, 100)
+        badge = create_badge(coverage, thresholds)
+        assert str(coverage) in badge
+
+    def test_returns_color(self):
+        thresholds = [(100, "green"), (80, "orange"), (0, "red")]
+        badge = create_badge(100, thresholds)
+        assert "green" in badge
