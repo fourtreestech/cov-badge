@@ -1,3 +1,4 @@
+import json
 import random
 from pathlib import Path
 
@@ -8,6 +9,7 @@ from cov_badge import (
     get_color,
     get_cov_percent,
     get_value_at_path,
+    load_json,
     update_badge,
 )
 
@@ -18,6 +20,22 @@ def make_readme(tmp_path: Path, lines: list[str]) -> Path:
     readme = tmp_path / "README.md"
     readme.write_text("\n".join(lines) + "\n")
     return readme
+
+
+def make_json(tmp_path: Path, obj: dict) -> Path:
+    json_file = tmp_path / "coverage.json"
+    with open(json_file, mode="w") as file:
+        json.dump(obj, file)
+    return json_file
+
+
+class TestLoadJSON:
+    def test_returns_object(self, tmp_path):
+        coverage = random.randint(0, 100)
+        obj = {"totals": {"percent_statements_covered_display": coverage}}
+        json_file = make_json(tmp_path, obj)
+        new_obj = load_json(str(json_file))
+        assert new_obj["totals"]["percent_statements_covered_display"] == coverage
 
 
 class TestUpdateBadge:

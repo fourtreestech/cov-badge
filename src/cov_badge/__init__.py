@@ -18,6 +18,7 @@ class AppConfig(BaseSettings):
     percent_path: list[str] = ["totals", "percent_statements_covered_display"]
     color_thresholds: list[tuple[int, str]] = DEFAULT_COLOR_THRESHOLDS
     readme_file: str = "README.md"
+    json_file: str = "coverage.json"
 
 
 app = typer.Typer()
@@ -27,13 +28,14 @@ app = typer.Typer()
 def main() -> None:
     config = AppConfig()
     print("Loading JSON file...")
-    obj = load_json()
+    obj = load_json(config.json_file)
     print("Creating coverage badge...")
     update_badge(
         get_cov_percent(obj, config.percent_path),
         config.color_thresholds,
         config.readme_file,
     )
+    print("Badge created.")
 
 
 def update_badge(
@@ -205,8 +207,15 @@ def get_cov_percent(obj: dict[str, Any], path: list[str]) -> int:
     return int(get_value_at_path(obj, path))
 
 
-def load_json() -> dict:
-    """Load JSON file and return as a Python dict"""
-    with open("coverage.json") as file:
+def load_json(json_file: str) -> dict:
+    """Load JSON file and return as a Python dict.
+
+    Args:
+        json_file: Name of the JSON file to open.
+
+    Returns:
+        Content of the JSON file converted into a `dict`.
+    """
+    with open(json_file) as file:
         obj = json.load(file)
     return obj
