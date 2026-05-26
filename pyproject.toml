@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.scripts]
-cov-badge = "cov_badge:main"
+cov-badge = "cov_badge:app"
 
 [build-system]
 requires = ["hatchling"]
