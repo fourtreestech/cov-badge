@@ -3,7 +3,13 @@ from operator import itemgetter
 from typing import Any
 
 import typer
-from pydantic_settings import BaseSettings
+from pydantic import field_validator
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    PyprojectTomlConfigSettingsSource,
+    SettingsConfigDict,
+)
 from rich.console import Console
 
 DEFAULT_COLOR_THRESHOLDS = [
@@ -20,6 +26,25 @@ class AppConfig(BaseSettings):
     color_thresholds: list[tuple[int, str]] = DEFAULT_COLOR_THRESHOLDS
     readme_file: str = "README.md"
     json_file: str = "coverage.json"
+
+    model_config = SettingsConfigDict(pyproject_toml_table_header=("tool", "cov-badge"))
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (PyprojectTomlConfigSettingsSource(settings_cls),)
+
+    @field_validator("color_thresholds", mode="before")
+    @classmethod
+    def coerce_thresholds(cls, v):
+        # TOML delivers these as [[100, "brightgreen"], ...] — lists, not tuples
+        return [tuple(item) for item in v]
 
 
 app = typer.Typer()
