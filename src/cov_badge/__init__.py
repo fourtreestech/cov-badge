@@ -22,6 +22,13 @@ DEFAULT_COLOR_THRESHOLDS = [
 
 
 class AppConfig(BaseSettings):
+    """Config for the app.
+
+    Populates config info in priority order (highest priority first):
+        - pyproject.toml
+        - app default values
+    """
+
     percent_path: list[str] = ["totals", "percent_statements_covered_display"]
     color_thresholds: list[tuple[int, str]] = DEFAULT_COLOR_THRESHOLDS
     readme_file: str = "README.md"
@@ -38,12 +45,13 @@ class AppConfig(BaseSettings):
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
+        """Define sources and their order for loading config values."""
         return (PyprojectTomlConfigSettingsSource(settings_cls),)
 
     @field_validator("color_thresholds", mode="before")
     @classmethod
     def coerce_thresholds(cls, v):
-        # TOML delivers these as [[100, "brightgreen"], ...] — lists, not tuples
+        """Coerce color thresholds from TOML source to list[tuple[int, str]]."""
         return [tuple(item) for item in v]
 
 

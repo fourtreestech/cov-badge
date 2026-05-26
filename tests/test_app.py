@@ -5,6 +5,8 @@ from pathlib import Path
 import pytest
 
 from cov_badge import (
+    DEFAULT_COLOR_THRESHOLDS,
+    AppConfig,
     create_badge,
     get_color,
     get_cov_percent,
@@ -27,6 +29,10 @@ def make_json(tmp_path: Path, obj: dict) -> Path:
     with open(json_file, mode="w") as file:
         json.dump(obj, file)
     return json_file
+
+
+def write_toml(config_dir: Path, content: str) -> None:
+    (config_dir / "pyproject.toml").write_text(content)
 
 
 class TestLoadJSON:
@@ -145,3 +151,61 @@ class TestCreateBadge:
     def test_returns_color(self):
         badge = create_badge(100, THRESHOLDS)
         assert "green" in badge
+
+
+class TestTOMLSettings:
+    def test_default_values_when_no_toml_section(self, config_dir):
+        write_toml(config_dir, "[tool.other]\nfoo = 'bar'\n")
+        config = AppConfig()
+        assert config.readme_file == "README.md"
+        assert config.json_file == "coverage.json"
+        assert config.color_thresholds == DEFAULT_COLOR_THRESHOLDS
+
+    def test_overrides_readme_file(self, config_dir):
+        write_toml(
+            config_dir,
+            """
+    [tool.cov-badge]
+    readme_file = "MYREADME.md"
+    """,
+        )
+        config = AppConfig()
+        assert config.readme_file == "MYREADME.md"
+
+    def test_overrides_json_file(self, config_dir):
+        write_toml(
+            config_dir,
+            """
+    [tool.cov-badge]
+    json_file = "my_coverage.json"
+    """,
+        )
+        config = AppConfig()
+        assert config.json_file == "my_coverage.json"
+
+    def test_overrides_color_thresholds(self, config_dir):
+        write_toml(
+            config_dir,
+            """
+    [tool.cov-badge]
+    color_thresholds = [[100, "blue"], [0, "red"]]
+    """,
+        )
+        config = AppConfig()
+        assert config.color_thresholds == [(100, "blue"), (0, "red")]
+
+    def test_overrides_percent_path(self, config_dir):
+        write_toml(
+            config_dir,
+            """
+    [tool.cov-badge]
+    percent_path = ["totals", "custom_key"]
+    """,
+        )
+        config = AppConfig()
+        assert config.percent_path == ["totals", "custom_key"]
+
+    def test_missing_pyproject_toml_uses_defaults(self, config_dir):
+        # No pyproject.toml written at all
+        config = AppConfig()
+        assert config.readme_file == "README.md"
