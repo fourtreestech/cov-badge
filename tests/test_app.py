@@ -3,10 +3,12 @@ import random
 from pathlib import Path
 
 import pytest
+from typer.testing import CliRunner
 
 from cov_badge import (
     DEFAULT_COLOR_THRESHOLDS,
     AppConfig,
+    app,
     create_badge,
     get_color,
     get_cov_percent,
@@ -16,6 +18,8 @@ from cov_badge import (
 )
 
 THRESHOLDS = [(100, "green"), (80, "orange"), (0, "red")]
+
+runner = CliRunner()
 
 
 def make_readme(tmp_path: Path, lines: list[str]) -> Path:
@@ -252,3 +256,123 @@ class TestDotEnvSettings:
         )
         (config_dir / ".env").write_text("COV_BADGE_README_FILE=DOTENV.md\n")
         assert AppConfig().readme_file == "DOTENV.md"
+
+
+class TestCLISettings:
+    def test_cli_overrides_readme_file(self, tmp_path):
+        readme = make_readme(tmp_path, ["### My Project"])
+        json_file = make_json(
+            tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
+        )
+        result = runner.invoke(
+            app,
+            ["--readme-file", str(readme), "--json-file", str(json_file)],
+        )
+        assert result.exit_code == 0
+        assert "![coverage]" in readme.read_text()
+
+    def test_cli_overrides_json_file(self, tmp_path):
+        readme = make_readme(tmp_path, ["### My Project"])
+        json_file = make_json(
+            tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
+        )
+        result = runner.invoke(
+            app,
+            ["--readme-file", str(readme), "--json-file", str(json_file)],
+        )
+        assert result.exit_code == 0
+
+    def test_cli_overrides_percent_path(self, tmp_path):
+        readme = make_readme(tmp_path, ["### My Project"])
+        json_file = make_json(tmp_path, {"meta": {"coverage": "72"}})
+        result = runner.invoke(
+            app,
+            [
+                "--readme-file",
+                str(readme),
+                "--json-file",
+                str(json_file),
+                "--percent-path",
+                "meta.coverage",
+            ],
+        )
+        assert result.exit_code == 0
+        assert "72" in readme.read_text()
+
+    def test_cli_overrides_color_thresholds(self, tmp_path):
+        readme = make_readme(tmp_path, ["### My Project"])
+        json_file = make_json(
+            tmp_path, {"totals": {"percent_statements_covered_display": "100"}}
+        )
+        result = runner.invoke(
+            app,
+            [
+                "--readme-file",
+                str(readme),
+                "--json-file",
+                str(json_file),
+                "--color-thresholds",
+                '[[100, "blue"], [0, "red"]]',
+            ],
+        )
+        assert result.exit_code == 0
+        assert "blue" in readme.read_text()
+
+    def test_cli_takes_priority_over_toml(self, config_dir, tmp_path):
+        readme = make_readme(tmp_path, ["### My Project"])
+        json_file = make_json(
+            tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
+        )
+        write_toml(
+            config_dir,
+            """
+[tool.cov-badge]
+readme_file = "TOML.md"
+json_file = "toml_coverage.json"
+""",
+        )
+        result = runner.invoke(
+            app,
+            ["--readme-file", str(readme), "--json-file", str(json_file)],
+        )
+        assert result.exit_code == 0
+        assert "![coverage]" in readme.read_text()
+
+    def test_cli_takes_priority_over_env(self, tmp_path, monkeypatch):
+        readme = make_readme(tmp_path, ["### My Project"])
+        json_file = make_json(
+            tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
+        )
+        monkeypatch.setenv("COV_BADGE_README_FILE", "ENV.md")
+        monkeypatch.setenv("COV_BADGE_JSON_FILE", "env_coverage.json")
+        result = runner.invoke(
+            app,
+            ["--readme-file", str(readme), "--json-file", str(json_file)],
+        )
+        assert result.exit_code == 0
+        assert "![coverage]" in readme.read_text()
+
+    def test_cli_error_on_invalid_json_file(self, tmp_path):
+        result = runner.invoke(
+            app,
+            ["--json-file", str(tmp_path / "nonexistent.json")],
+        )
+        assert result.exit_code != 0
+
+    def test_cli_error_on_invalid_percent_path(self, tmp_path):
+        readme = make_readme(tmp_path, ["### My Project"])
+        json_file = make_json(
+            tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
+        )
+        result = runner.invoke(
+            app,
+            [
+                "--readme-file",
+                str(readme),
+                "--json-file",
+                str(json_file),
+                "--percent-path",
+                "wrong.path",
+            ],
+        )
+        assert result.exit_code != 0

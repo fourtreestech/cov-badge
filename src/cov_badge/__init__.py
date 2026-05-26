@@ -25,6 +25,7 @@ class AppConfig(BaseSettings):
     """Config for the app.
 
     Populates config info in priority order (highest priority first):
+        - command line options
         - environment variables
         - .env
         - pyproject.toml
@@ -54,6 +55,7 @@ class AppConfig(BaseSettings):
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         """Define sources and their order for loading config values."""
         return (
+            init_settings,
             env_settings,
             dotenv_settings,
             PyprojectTomlConfigSettingsSource(settings_cls),
@@ -71,10 +73,32 @@ console = Console(highlight=False)
 
 
 @app.command()
-def main() -> None:
+def main(
+    readme_file: str | None = typer.Option(None, help="README file to update."),
+    json_file: str | None = typer.Option(None, help="Coverage JSON file to read."),
+    percent_path: str | None = typer.Option(
+        None,
+        help='JSON path to coverage value, as dot-separated string e.g. "totals.percent_covered".',
+    ),
+    color_thresholds: str | None = typer.Option(
+        None,
+        help='Color thresholds as JSON string e.g. "[[100, \\"brightgreen\\"], [0, \\"red\\"]]".',
+    ),
+) -> None:
     """Main app entry point."""
+    # Build overrides dict from any CLI args that were actually passed
+    overrides: dict[str, Any] = {}
+    if readme_file is not None:
+        overrides["readme_file"] = readme_file
+    if json_file is not None:
+        overrides["json_file"] = json_file
+    if percent_path is not None:
+        overrides["percent_path"] = percent_path.split(".")
+    if color_thresholds is not None:
+        overrides["color_thresholds"] = json.loads(color_thresholds)
+
     # Set up config
-    config = AppConfig()
+    config = AppConfig(**overrides)
 
     # Load JSON file
     console.print("Loading JSON file...")
