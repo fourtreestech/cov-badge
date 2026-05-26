@@ -25,6 +25,8 @@ class AppConfig(BaseSettings):
     """Config for the app.
 
     Populates config info in priority order (highest priority first):
+        - environment variables
+        - .env
         - pyproject.toml
         - app default values
     """
@@ -34,7 +36,12 @@ class AppConfig(BaseSettings):
     readme_file: str = "README.md"
     json_file: str = "coverage.json"
 
-    model_config = SettingsConfigDict(pyproject_toml_table_header=("tool", "cov-badge"))
+    model_config = SettingsConfigDict(
+        pyproject_toml_table_header=("tool", "cov-badge"),
+        env_prefix="COV_BADGE_",
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
 
     @classmethod
     def settings_customise_sources(
@@ -46,7 +53,11 @@ class AppConfig(BaseSettings):
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         """Define sources and their order for loading config values."""
-        return (PyprojectTomlConfigSettingsSource(settings_cls),)
+        return (
+            env_settings,
+            dotenv_settings,
+            PyprojectTomlConfigSettingsSource(settings_cls),
+        )
 
     @field_validator("color_thresholds", mode="before")
     @classmethod

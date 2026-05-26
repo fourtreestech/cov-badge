@@ -209,3 +209,46 @@ class TestTOMLSettings:
         # No pyproject.toml written at all
         config = AppConfig()
         assert config.readme_file == "README.md"
+
+
+class TestEnvSettings:
+    def test_env_overrides_readme_file(self, monkeypatch):
+        monkeypatch.setenv("COV_BADGE_README_FILE", "OTHER.md")
+        assert AppConfig().readme_file == "OTHER.md"
+
+    def test_env_takes_priority_over_toml(self, config_dir, monkeypatch):
+        write_toml(
+            config_dir,
+            """
+    [tool.cov-badge]
+    readme_file = "TOML.md"
+    """,
+        )
+        monkeypatch.setenv("COV_BADGE_README_FILE", "ENV.md")
+        assert AppConfig().readme_file == "ENV.md"
+
+    def test_env_json_list_field(self, monkeypatch):
+        monkeypatch.setenv("COV_BADGE_PERCENT_PATH", '["meta", "coverage"]')
+        assert AppConfig().percent_path == ["meta", "coverage"]
+
+
+class TestDotEnvSettings:
+    def test_dotenv_overrides_readme_file(self, config_dir):
+        (config_dir / ".env").write_text("COV_BADGE_README_FILE=DOTENV.md\n")
+        assert AppConfig().readme_file == "DOTENV.md"
+
+    def test_env_var_takes_priority_over_dotenv(self, config_dir, monkeypatch):
+        (config_dir / ".env").write_text("COV_BADGE_README_FILE=DOTENV.md\n")
+        monkeypatch.setenv("COV_BADGE_README_FILE", "ENV.md")
+        assert AppConfig().readme_file == "ENV.md"
+
+    def test_dotenv_takes_priority_over_toml(self, config_dir):
+        write_toml(
+            config_dir,
+            """
+    [tool.cov-badge]
+    readme_file = "TOML.md"
+    """,
+        )
+        (config_dir / ".env").write_text("COV_BADGE_README_FILE=DOTENV.md\n")
+        assert AppConfig().readme_file == "DOTENV.md"

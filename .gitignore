@@ -15,4 +15,5 @@ wheels/
 # Test coverage
 .coverage
 
-
+# Environment variables
+.env
