@@ -376,3 +376,43 @@ json_file = "toml_coverage.json"
             ],
         )
         assert result.exit_code != 0
+
+
+class TestApp:
+    def test_invalid_key_causes_error(self, tmp_path):
+        readme = make_readme(tmp_path, ["### My Project"])
+        json_file = make_json(
+            tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
+        )
+        result = runner.invoke(
+            app,
+            [
+                "--readme-file",
+                str(readme),
+                "--json-file",
+                str(json_file),
+                "--percent-path",
+                "total",
+            ],
+        )
+        assert result.exit_code == 1
+        assert "Key 'total' not found" in result.output
+
+    def test_invalid_path_causes_error(self, tmp_path):
+        readme = make_readme(tmp_path, ["### My Project"])
+        json_file = make_json(
+            tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
+        )
+        result = runner.invoke(
+            app,
+            [
+                "--readme-file",
+                str(readme),
+                "--json-file",
+                str(json_file),
+                "--percent-path",
+                "totals.percent_statements_covered_display.cov",
+            ],
+        )
+        assert result.exit_code == 1
+        assert "Invalid path" in result.output

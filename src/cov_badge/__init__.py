@@ -104,8 +104,19 @@ def main(
     console.print("Loading JSON file...")
     obj = load_json(config.json_file)
 
+    # Get coverage value
+    try:
+        coverage = get_cov_percent(obj, config.percent_path)
+    except KeyError as e:
+        console.print(
+            f"[red]{str(e).strip('"')}. Check your --percent-path setting.[/]"
+        )
+        raise typer.Exit(code=1)
+    except TypeError as e:
+        console.print(f"[red]Invalid path: {e}. Check your --percent-path setting.[/]")
+        raise typer.Exit(code=1)
+
     # Create badge
-    coverage = get_cov_percent(obj, config.percent_path)
     console.print(f"Creating coverage badge ({coverage}%)...")
     update_badge(
         coverage,
@@ -282,6 +293,10 @@ def get_cov_percent(obj: dict[str, Any], path: list[str]) -> int:
 
     Returns:
         The value at `path`, coerced to an int
+
+    Raises:
+        TypeError: If attempting to traverse anything other than a `dict`.
+        KeyError: If an invalid key is provided.
     """
     return int(get_value_at_path(obj, path))
 
