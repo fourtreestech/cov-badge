@@ -416,3 +416,22 @@ class TestApp:
         )
         assert result.exit_code == 1
         assert "Invalid path" in result.output
+
+    def test_invalid_json_causes_error(self, tmp_path):
+        readme = make_readme(tmp_path, ["### My Project"])
+        json_file = make_json(
+            tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
+        )
+        result = runner.invoke(
+            app,
+            [
+                "--readme-file",
+                str(readme),
+                "--json-file",
+                str(json_file),
+                "--color-thresholds",
+                "abcde",
+            ],
+        )
+        assert result.exit_code == 1
+        assert "Invalid JSON" in result.output

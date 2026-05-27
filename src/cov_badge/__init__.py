@@ -95,7 +95,11 @@ def main(
     if percent_path is not None:
         overrides["percent_path"] = percent_path.split(".")
     if color_thresholds is not None:
-        overrides["color_thresholds"] = json.loads(color_thresholds)
+        try:
+            overrides["color_thresholds"] = json.loads(color_thresholds)
+        except json.JSONDecodeError:
+            console.print("[red]Invalid JSON for --color-thresholds.[/]")
+            raise typer.Exit(code=1)
 
     # Set up config
     config = AppConfig(**overrides)
