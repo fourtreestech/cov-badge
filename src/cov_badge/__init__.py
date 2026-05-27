@@ -105,7 +105,6 @@ def main(
     config = AppConfig(**overrides)
 
     # Load JSON file
-    console.print("Loading JSON file...")
     obj = load_json(config.json_file)
 
     # Get coverage value
@@ -121,20 +120,24 @@ def main(
         raise typer.Exit(code=1)
 
     # Create badge
-    console.print(f"Creating coverage badge ({coverage}%)...")
-    update_badge(
+    badge = update_badge(
         coverage,
         config.color_thresholds,
         config.readme_file,
     )
 
-    # Sign off
-    console.print("[bold green]Badge created.[/]\n")
+    # Extract color
+    color = badge.split("-")[-1].strip(")")
+
+    # Report success
+    console.print(
+        f"Coverage badge updated: {coverage}% ({color}) → {config.readme_file}\n"
+    )
 
 
 def update_badge(
     coverage: int, color_thresholds: list[tuple[int, str]], readme_file: str
-):
+) -> str:
     """Update the badge in the README file.
 
     `coverage` is the total test coverage percentage.
@@ -160,6 +163,9 @@ def update_badge(
         coverage: Coverage value (0-100).
         color_thresholds: List of thresholds defining a colour for any given value.
         readme_file: Name of the README file to update.
+
+    Returns:
+        Badge script
     """
     # Open README file
     with open(readme_file) as file:
@@ -191,6 +197,8 @@ def update_badge(
     # Write README file
     with open(readme_file, mode="w") as file:
         file.writelines(readme_lines)
+
+    return readme_lines[index].strip()
 
 
 def create_badge(coverage: int, color_thresholds: list[tuple[int, str]]) -> str:
