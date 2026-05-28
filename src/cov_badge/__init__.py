@@ -15,6 +15,7 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 from rich.console import Console
+from rich.markup import escape
 
 DEFAULT_COLOR_THRESHOLDS = [
     (100, "brightgreen"),
@@ -127,6 +128,12 @@ def main(
     quiet: bool = typer.Option(
         False, "--quiet", "-q", help="Suppress output on success."
     ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        "-d",
+        help="Print the badge string without writing to the README file.",
+    ),
     version: bool = typer.Option(
         None,
         "--version",
@@ -172,9 +179,7 @@ def main(
 
     # Create badge
     badge = update_badge(
-        coverage,
-        config.color_thresholds,
-        config.readme_file,
+        coverage, config.color_thresholds, config.readme_file, dry_run=dry_run
     )
 
     # Extract color
@@ -183,12 +188,17 @@ def main(
     # Report success
     if not quiet:
         console.print(
-            f"Coverage badge updated: {coverage}% ({color}) → {config.readme_file}\n"
+            escape(badge)
+            if dry_run
+            else f"Coverage badge updated: {coverage}% ({color}) → {config.readme_file}\n"
         )
 
 
 def update_badge(
-    coverage: int, color_thresholds: list[tuple[int, str]], readme_file: str
+    coverage: int,
+    color_thresholds: list[tuple[int, str]],
+    readme_file: str,
+    dry_run: bool = False,
 ) -> str:
     """Update the badge in the README file.
 
@@ -215,48 +225,55 @@ def update_badge(
         coverage: Coverage value (0-100).
         color_thresholds: List of thresholds defining a colour for any given value.
         readme_file: Name of the README file to update.
+        dry_run: If True don't write anything to the README file.
 
     Returns:
         Badge script
     """
-    # Open README file
-    with open(readme_file) as file:
-        readme_lines = file.readlines()
+    # Make badge
+    badge = create_badge(coverage, color_thresholds)
 
-    # Find the coverage line if there is one
-    index = 0
-    title = 0
-    last_badge = 0
-    for i, line in enumerate(readme_lines):
-        if line.startswith("![coverage]"):
-            index = i
-            break
-        elif line.startswith("###"):
-            title = i
-        elif line.startswith("!["):
-            last_badge = i
+    if not dry_run:
+        # Open README file
+        with open(readme_file) as file:
+            readme_lines = file.readlines()
 
-    # If there isn't a coverage line already, insert one -
-    # after other badges if there are any, or just after the main title
-    else:
-        insert_after = last_badge if last_badge else title
-        index = insert_after + 1
-        readme_lines.insert(index, "")
+        # Find the coverage line if there is one
+        index = 0
+        title = 0
+        last_badge = 0
+        for i, line in enumerate(readme_lines):
+            if line.startswith("![coverage]"):
+                index = i
+                break
+            elif line.startswith("###"):
+                title = i
+            elif line.startswith("!["):
+                last_badge = i
 
-    # Update badge
-    readme_lines[index] = create_badge(coverage, color_thresholds)
+        # If there isn't a coverage line already, insert one -
+        # after other badges if there are any, or just after the main title
+        else:
+            insert_after = last_badge if last_badge else title
+            index = insert_after + 1
+            readme_lines.insert(index, "")
 
-    # Write atomically
-    fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(readme_file)))
-    try:
-        with os.fdopen(fd, "w") as tmp_file:
-            tmp_file.writelines(readme_lines)
-        os.replace(tmp_path, readme_file)
-    except Exception: # pragma: no cover
-        os.unlink(tmp_path)
-        raise
+        # Update badge
+        readme_lines[index] = badge + "\n"
 
-    return readme_lines[index].strip()
+        # Write atomically
+        fd, tmp_path = tempfile.mkstemp(
+            dir=os.path.dirname(os.path.abspath(readme_file))
+        )
+        try:
+            with os.fdopen(fd, "w") as tmp_file:
+                tmp_file.writelines(readme_lines)
+            os.replace(tmp_path, readme_file)
+        except Exception:  # pragma: no cover
+            os.unlink(tmp_path)
+            raise
+
+    return badge
 
 
 def create_badge(coverage: int, color_thresholds: list[tuple[int, str]]) -> str:
@@ -279,7 +296,7 @@ def create_badge(coverage: int, color_thresholds: list[tuple[int, str]]) -> str:
         `Shields.io` badge script.
     """
     color = get_color(coverage, color_thresholds)
-    return f"![coverage](https://img.shields.io/badge/coverage-{coverage}%25-{color})\n"
+    return f"![coverage](https://img.shields.io/badge/coverage-{coverage}%25-{color})"
 
 
 def get_color(value: int, color_thresholds: list[tuple[int, str]]) -> str:

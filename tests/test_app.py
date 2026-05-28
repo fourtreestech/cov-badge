@@ -101,6 +101,19 @@ class TestUpdateBadge:
         assert lines[1].startswith("![coverage]")
         assert str(coverage) in lines[1]
 
+    def test_dry_run_doesnt_write_to_readme(self, tmp_path):
+        readme = make_readme(
+            tmp_path,
+            [
+                "### My Project",
+                "Some description.",
+            ],
+        )
+        coverage = random.randint(0, 100)
+        update_badge(coverage, THRESHOLDS, str(readme), dry_run=True)
+        lines = readme.read_text().splitlines()
+        assert lines[1] == "Some description."
+
 
 class TestGetCovPercent:
     def test_returns_correct_value(self):
