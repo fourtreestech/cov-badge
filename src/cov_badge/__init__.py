@@ -76,6 +76,17 @@ class AppConfig(BaseSettings):
         return [tuple(item) for item in v]
 
     @model_validator(mode="after")
+    def check_color_thresholds_has_no_duplicate_values(self) -> "AppConfig":
+        """Raise an error if color_thresholds has a duplicate value entry."""
+        values = set()
+        for value, _ in self.color_thresholds:
+            if value in values:
+                raise ValueError(f"Duplicate color threshold value: {value}")
+            values.add(value)
+
+        return self
+
+    @model_validator(mode="after")
     def check_color_thresholds_has_zero(self) -> "AppConfig":
         """Warn if color_thresholds has no zero-value entry.
 

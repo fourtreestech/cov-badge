@@ -496,6 +496,8 @@ class TestApp:
         )
         assert "cov-badge" in result.output
 
+
+class TestAppConfig:
     def test_warns_when_no_zero_threshold(self):
         with pytest.warns(UserWarning, match="no zero-value entry"):
             AppConfig(color_thresholds=[(100, "green"), (50, "orange")])
@@ -505,10 +507,14 @@ class TestApp:
             warnings.simplefilter("error")
             AppConfig(color_thresholds=[(100, "green"), (0, "red")])  # should not warn
 
+    def test_error_with_duplicate_color_threshold_values(self):
+        with pytest.raises(ValueError):
+            AppConfig(color_thresholds=[(100, "green"), (100, "orange")])
 
-# Strategy for a single threshold: (int 0-100, non-empty string)
+
+# Strategy for a single threshold: (int 1-100, non-empty string)
 threshold_entry = st.tuples(
-    st.integers(min_value=0, max_value=100), st.text(min_size=1)
+    st.integers(min_value=1, max_value=100), st.text(min_size=1)
 )
 
 # Strategy for a valid thresholds list: at least one entry, ending with a zero entry
@@ -538,6 +544,7 @@ class TestHypothesis:
     @given(value=st.integers(min_value=0, max_value=100), thresholds=valid_thresholds)
     def test_get_color_handles_unsorted_thresholds(self, value, thresholds):
         """Result should be the same regardless of threshold order."""
+        assume(len({min_value for min_value, _ in thresholds}) == len(thresholds))
         shuffled = thresholds.copy()
         shuffled.reverse()
         assert get_color(value, thresholds) == get_color(value, shuffled)
