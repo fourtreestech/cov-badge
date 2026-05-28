@@ -4,6 +4,8 @@ import warnings
 from pathlib import Path
 
 import pytest
+from hypothesis import assume, given
+from hypothesis import strategies as st
 from typer.testing import CliRunner
 
 from cov_badge import (
@@ -502,3 +504,78 @@ class TestApp:
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             AppConfig(color_thresholds=[(100, "green"), (0, "red")])  # should not warn
+
+
+# Strategy for a single threshold: (int 0-100, non-empty string)
+threshold_entry = st.tuples(
+    st.integers(min_value=0, max_value=100), st.text(min_size=1)
+)
+
+# Strategy for a valid thresholds list: at least one entry, ending with a zero entry
+valid_thresholds = st.lists(threshold_entry, min_size=1).map(
+    lambda ts: ts + [(0, "red")]
+)
+
+
+class TestHypothesis:
+    # --- get_color ---
+
+    @given(value=st.integers(min_value=0, max_value=100), thresholds=valid_thresholds)
+    def test_get_color_always_returns_a_string(self, value, thresholds):
+        result = get_color(value, thresholds)
+        assert isinstance(result, str)
+
+    @given(value=st.integers(min_value=0, max_value=100), thresholds=valid_thresholds)
+    def test_get_color_returns_a_color_from_thresholds(self, value, thresholds):
+        valid_colors = {color for _, color in thresholds}
+        assert get_color(value, thresholds) in valid_colors
+
+    @given(thresholds=valid_thresholds)
+    def test_get_color_is_stable_for_same_input(self, thresholds):
+        """Same inputs always produce the same output."""
+        assert get_color(50, thresholds) == get_color(50, thresholds)
+
+    @given(value=st.integers(min_value=0, max_value=100), thresholds=valid_thresholds)
+    def test_get_color_handles_unsorted_thresholds(self, value, thresholds):
+        """Result should be the same regardless of threshold order."""
+        shuffled = thresholds.copy()
+        shuffled.reverse()
+        assert get_color(value, thresholds) == get_color(value, shuffled)
+
+    # --- get_value_at_path ---
+
+    @given(value=st.integers())
+    def test_get_value_at_path_single_key(self, value):
+        obj = {"key": value}
+        assert get_value_at_path(obj, ["key"]) == value
+
+    @given(value=st.integers(), depth=st.integers(min_value=1, max_value=5))
+    def test_get_value_at_path_nested(self, value, depth):
+        """Navigates arbitrarily deep nested dicts."""
+        keys = [f"level{i}" for i in range(depth)]
+        # Build nested dict from the inside out
+        obj = value
+        for key in reversed(keys):
+            obj = {key: obj}
+        assert get_value_at_path(obj, keys) == value
+
+    @given(
+        keys=st.lists(st.text(min_size=1), min_size=1, max_size=5),
+        value=st.integers(),
+    )
+    def test_get_value_at_path_raises_key_error_on_wrong_key(self, keys, value):
+        """A path with a bad final key always raises KeyError."""
+        obj = value
+        for key in reversed(keys):
+            obj = {key: obj}
+        bad_key = "this_key_does_not_exist"
+        assume(bad_key not in keys)
+        with pytest.raises(KeyError):
+            get_value_at_path(obj, keys + [bad_key])
+
+    @given(value=st.integers(), key=st.text(min_size=1))
+    def test_get_value_at_path_raises_type_error_on_non_dict(self, value, key):
+        """Attempting to traverse a non-dict node always raises TypeError."""
+        obj = {key: value}  # value is an int, not a dict
+        with pytest.raises(TypeError):
+            get_value_at_path(obj, [key, "another_key"])
