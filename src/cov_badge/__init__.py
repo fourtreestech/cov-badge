@@ -1,4 +1,5 @@
 import json
+from importlib.metadata import version
 from operator import itemgetter
 from typing import Any
 
@@ -19,6 +20,9 @@ DEFAULT_COLOR_THRESHOLDS = [
     (50, "orange"),
     (0, "red"),
 ]
+
+app = typer.Typer()
+console = Console(highlight=False)
 
 
 class AppConfig(BaseSettings):
@@ -68,8 +72,16 @@ class AppConfig(BaseSettings):
         return [tuple(item) for item in v]
 
 
-app = typer.Typer()
-console = Console(highlight=False)
+def version_callback(value: bool) -> None:
+    """Prints the version number and exits.
+
+    Args:
+        value: If `True` print the version number; if `False` do nothing.
+
+    """
+    if value:
+        print(f"cov-badge {version('cov-badge')}")
+        raise typer.Exit()
 
 
 @app.command()
@@ -86,6 +98,14 @@ def main(
     ),
     quiet: bool = typer.Option(
         False, "--quiet", "-q", help="Suppress output on success."
+    ),
+    version: bool = typer.Option(
+        None,
+        "--version",
+        "-V",
+        callback=version_callback,
+        is_eager=True,
+        help="Show version and exit.",
     ),
 ) -> None:
     """Main app entry point."""
