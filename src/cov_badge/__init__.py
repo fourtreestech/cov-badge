@@ -84,6 +84,9 @@ def main(
         None,
         help='Color thresholds as JSON string e.g. "[[100, \\"brightgreen\\"], [0, \\"red\\"]]".',
     ),
+    quiet: bool = typer.Option(
+        False, "--quiet", "-q", help="Suppress output on success."
+    ),
 ) -> None:
     """Main app entry point."""
     # Build overrides dict from any CLI args that were actually passed
@@ -130,9 +133,10 @@ def main(
     color = badge.split("-")[-1].strip(")")
 
     # Report success
-    console.print(
-        f"Coverage badge updated: {coverage}% ({color}) → {config.readme_file}\n"
-    )
+    if not quiet:
+        console.print(
+            f"Coverage badge updated: {coverage}% ({color}) → {config.readme_file}\n"
+        )
 
 
 def update_badge(

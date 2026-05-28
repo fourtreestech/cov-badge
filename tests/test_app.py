@@ -435,3 +435,30 @@ class TestApp:
         )
         assert result.exit_code == 1
         assert "Invalid JSON" in result.output
+
+    def test_prints_outcome(self, tmp_path):
+        readme = make_readme(tmp_path, ["### My Project"])
+        json_file = make_json(
+            tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
+        )
+        result = runner.invoke(
+            app,
+            [
+                "--readme-file",
+                str(readme),
+                "--json-file",
+                str(json_file),
+            ],
+        )
+        assert "Coverage badge updated" in result.output
+
+    def test_no_output_in_quiet_mode(self, tmp_path):
+        readme = make_readme(tmp_path, ["### My Project"])
+        json_file = make_json(
+            tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
+        )
+        result = runner.invoke(
+            app,
+            ["--readme-file", str(readme), "--json-file", str(json_file), "--quiet"],
+        )
+        assert not result.output
