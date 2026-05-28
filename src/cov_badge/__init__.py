@@ -1,10 +1,11 @@
 import json
+import warnings
 from importlib.metadata import version
 from operator import itemgetter
 from typing import Any
 
 import typer
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -70,6 +71,31 @@ class AppConfig(BaseSettings):
     def coerce_thresholds(cls, v):
         """Coerce color thresholds from TOML source to list[tuple[int, str]]."""
         return [tuple(item) for item in v]
+
+    @model_validator(mode="after")
+    def check_color_thresholds_has_zero(self) -> "AppConfig":
+        """Warn if color_thresholds has no zero-value entry.
+
+        Without a zero entry, any coverage value below the lowest threshold
+        will silently fall back to the lowest colour rather than raising an error.
+        """
+        # Colors aren't necessarily in order
+        min_value = 1000
+        min_color = ""
+        for value, color in self.color_thresholds:
+            if value < min_value:
+                min_value = value
+                min_color = color
+
+        if min_value > 0:
+            warnings.warn(
+                "color_thresholds has no zero-value entry. "
+                "Coverage values below the lowest threshold will use "
+                f"{min_color} as a fallback colour.",
+                UserWarning,
+                stacklevel=2,
+            )
+        return self
 
 
 def version_callback(value: bool) -> None:

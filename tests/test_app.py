@@ -1,5 +1,6 @@
 import json
 import random
+import warnings
 from pathlib import Path
 
 import pytest
@@ -479,3 +480,12 @@ class TestApp:
             ],
         )
         assert "cov-badge" in result.output
+
+    def test_warns_when_no_zero_threshold(self):
+        with pytest.warns(UserWarning, match="no zero-value entry"):
+            AppConfig(color_thresholds=[(100, "green"), (50, "orange")])
+
+    def test_no_warning_when_zero_threshold_present(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            AppConfig(color_thresholds=[(100, "green"), (0, "red")])  # should not warn
