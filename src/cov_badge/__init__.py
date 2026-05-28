@@ -1,4 +1,6 @@
 import json
+import os
+import tempfile
 import warnings
 from importlib.metadata import version
 from operator import itemgetter
@@ -244,9 +246,15 @@ def update_badge(
     # Update badge
     readme_lines[index] = create_badge(coverage, color_thresholds)
 
-    # Write README file
-    with open(readme_file, mode="w") as file:
-        file.writelines(readme_lines)
+    # Write atomically
+    fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(readme_file)))
+    try:
+        with os.fdopen(fd, "w") as tmp_file:
+            tmp_file.writelines(readme_lines)
+        os.replace(tmp_path, readme_file)
+    except Exception: # pragma: no cover
+        os.unlink(tmp_path)
+        raise
 
     return readme_lines[index].strip()
 
