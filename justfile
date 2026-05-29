@@ -1,3 +1,8 @@
+set dotenv-load
+
+# Read version from pyproject.toml
+version := `grep '^version' pyproject.toml | cut -d'"' -f2`
+
 # Default: list available tasks
 default:
     @just --list
@@ -21,7 +26,16 @@ sync:
     git switch dev
 
 # Add version tag
-tag version:
+tag:
     git switch main
     git tag -a v{{version}} -m 'v{{version}}'
     git push origin v{{version}}
+
+# Publish to PyPI
+publish:
+    rm -r dist
+    uv build
+    uv publish --token $PYPI_TOKEN
+
+# Tag and publish
+release: tag publish
