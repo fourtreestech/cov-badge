@@ -251,6 +251,10 @@ class TestEnvSettings:
         monkeypatch.setenv("COV_BADGE_PERCENT_PATH", '["meta", "coverage"]')
         assert AppConfig().percent_path == ["meta", "coverage"]
 
+    def test_env_ignores_unrelated_key(self, monkeypatch):
+        monkeypatch.setenv("UNRELATED_KEY", "OTHER.md")
+        assert AppConfig().readme_file == "README.md"
+
 
 class TestDotEnvSettings:
     def test_dotenv_overrides_readme_file(self, config_dir):
@@ -272,6 +276,10 @@ class TestDotEnvSettings:
         )
         (config_dir / ".env").write_text("COV_BADGE_README_FILE=DOTENV.md\n")
         assert AppConfig().readme_file == "DOTENV.md"
+
+    def test_dotenv_ignores_unrelated_key(self, config_dir):
+        (config_dir / ".env").write_text("UNRELATED_KEY=DOTENV.md\n")
+        assert AppConfig().readme_file == "README.md"
 
 
 class TestCLISettings:

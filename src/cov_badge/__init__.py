@@ -50,6 +50,7 @@ class AppConfig(BaseSettings):
         env_prefix="COV_BADGE_",
         env_file=".env",
         env_file_encoding="utf-8",
+        dotenv_filtering="match_prefix",
     )
 
     @classmethod
