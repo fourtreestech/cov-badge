@@ -568,15 +568,15 @@ class TestHypothesis:
 
     @given(
         keys=st.lists(st.text(min_size=1), min_size=1, max_size=5),
-        value=st.integers(),
     )
-    def test_get_value_at_path_raises_key_error_on_wrong_key(self, keys, value):
-        """A path with a bad final key always raises KeyError."""
-        obj = value
-        for key in reversed(keys):
-            obj = {key: obj}
+    def test_get_value_at_path_raises_key_error_on_wrong_key(self, keys):
         bad_key = "this_key_does_not_exist"
         assume(bad_key not in keys)
+        # Use an empty dict as the leaf value so traversal always hits a KeyError
+        # rather than a TypeError when the bad key is appended
+        obj = {}
+        for key in reversed(keys):
+            obj = {key: obj}
         with pytest.raises(KeyError):
             get_value_at_path(obj, keys + [bad_key])
 
