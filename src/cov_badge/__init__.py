@@ -4,7 +4,7 @@ import tempfile
 import warnings
 from importlib.metadata import version
 from operator import itemgetter
-from typing import Any, Optional
+from typing import Any
 
 import typer
 from pydantic import field_validator, model_validator
@@ -94,12 +94,7 @@ class AppConfig(BaseSettings):
         will silently fall back to the lowest colour rather than raising an error.
         """
         # Colors aren't necessarily in order
-        min_value = 1000
-        min_color = ""
-        for value, color in self.color_thresholds:
-            if value < min_value:
-                min_value = value
-                min_color = color
+        min_value, min_color = min(self.color_thresholds, key=itemgetter(0))
 
         if min_value > 0:
             warnings.warn(
@@ -126,13 +121,13 @@ def version_callback(value: bool) -> None:
 
 @app.command()
 def main(
-    readme_file: Optional[str] = typer.Option(None, help="README file to update."),
-    json_file: Optional[str] = typer.Option(None, help="Coverage JSON file to read."),
-    percent_path: Optional[str] = typer.Option(
+    readme_file: str | None = typer.Option(None, help="README file to update."),
+    json_file: str | None = typer.Option(None, help="Coverage JSON file to read."),
+    percent_path: str | None = typer.Option(
         None,
         help='JSON path to coverage value, as dot-separated string e.g. "totals.percent_covered".',
     ),
-    color_thresholds: Optional[str] = typer.Option(
+    color_thresholds: str | None = typer.Option(
         None,
         help='Color thresholds as JSON string e.g. "[[100, \\"brightgreen\\"], [0, \\"red\\"]]".',
     ),
@@ -194,7 +189,7 @@ def main(
     )
 
     # Extract color
-    color = badge.split("-")[-1].strip(")")
+    color = get_color(coverage, config.color_thresholds)
 
     # Report success
     if not quiet:
