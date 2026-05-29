@@ -4,7 +4,7 @@ import tempfile
 import warnings
 from importlib.metadata import version
 from operator import itemgetter
-from typing import Any
+from typing import Any, Optional
 
 import typer
 from pydantic import field_validator, model_validator
@@ -126,13 +126,13 @@ def version_callback(value: bool) -> None:
 
 @app.command()
 def main(
-    readme_file: str | None = typer.Option(None, help="README file to update."),
-    json_file: str | None = typer.Option(None, help="Coverage JSON file to read."),
-    percent_path: str | None = typer.Option(
+    readme_file: Optional[str] = typer.Option(None, help="README file to update."),
+    json_file: Optional[str] = typer.Option(None, help="Coverage JSON file to read."),
+    percent_path: Optional[str] = typer.Option(
         None,
         help='JSON path to coverage value, as dot-separated string e.g. "totals.percent_covered".',
     ),
-    color_thresholds: str | None = typer.Option(
+    color_thresholds: Optional[str] = typer.Option(
         None,
         help='Color thresholds as JSON string e.g. "[[100, \\"brightgreen\\"], [0, \\"red\\"]]".',
     ),
