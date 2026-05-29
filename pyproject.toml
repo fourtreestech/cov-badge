@@ -1,6 +1,6 @@
 [project]
 name = "cov-badge"
-version = "0.1.0"
+version = "0.1.1"
 description = "A CLI tool that generates a Shields.io coverage badge and inserts it into your README.md automatically."
 readme = "README.md"
 license = { file = "LICENSE" }
