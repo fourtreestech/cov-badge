@@ -1,5 +1,6 @@
 # cov-badge
 
+![python-required](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Ffourtreestech%2Fcov-badge%2Fpyproject.toml)
 ![coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 
 A CLI tool that generates a [Shields.io](https://shields.io) coverage badge and inserts it into your `README.md` automatically.
