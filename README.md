@@ -39,7 +39,7 @@ The tool will insert a badge like this into your `README.md`:
 ![coverage](https://img.shields.io/badge/coverage-95%25-green)
 ```
 
-If a coverage badge already exists it will be updated in place. If not, it will be inserted after any existing badges, or directly after the main title (`###`).
+If a coverage badge already exists it will be updated in place. If not, it will be inserted after any existing badges, or directly after the main title (`#`).
 
 ### Options
 
