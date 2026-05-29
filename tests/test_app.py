@@ -56,7 +56,7 @@ class TestUpdateBadge:
         readme = make_readme(
             tmp_path,
             [
-                "### cov-badge",
+                "# cov-badge",
                 "![coverage](https://img.shields.io/badge/coverage-80%25-green)",
             ],
         )
@@ -70,7 +70,7 @@ class TestUpdateBadge:
         readme = make_readme(
             tmp_path,
             [
-                "### cov-badge",
+                "# cov-badge",
                 "![build](https://img.shields.io/badge/build-passing-blue)",
                 "Some description.",
             ],
@@ -85,7 +85,7 @@ class TestUpdateBadge:
         readme = make_readme(
             tmp_path,
             [
-                "### My Project",
+                "# My Project",
                 "Some description.",
             ],
         )
@@ -107,7 +107,7 @@ class TestUpdateBadge:
         readme = make_readme(
             tmp_path,
             [
-                "### My Project",
+                "# My Project",
                 "Some description.",
             ],
         )
@@ -276,7 +276,7 @@ class TestDotEnvSettings:
 
 class TestCLISettings:
     def test_cli_overrides_readme_file(self, tmp_path):
-        readme = make_readme(tmp_path, ["### My Project"])
+        readme = make_readme(tmp_path, ["# My Project"])
         json_file = make_json(
             tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
         )
@@ -288,7 +288,7 @@ class TestCLISettings:
         assert "![coverage]" in readme.read_text()
 
     def test_cli_overrides_json_file(self, tmp_path):
-        readme = make_readme(tmp_path, ["### My Project"])
+        readme = make_readme(tmp_path, ["# My Project"])
         json_file = make_json(
             tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
         )
@@ -299,7 +299,7 @@ class TestCLISettings:
         assert result.exit_code == 0
 
     def test_cli_overrides_percent_path(self, tmp_path):
-        readme = make_readme(tmp_path, ["### My Project"])
+        readme = make_readme(tmp_path, ["# My Project"])
         json_file = make_json(tmp_path, {"meta": {"coverage": "72"}})
         result = runner.invoke(
             app,
@@ -316,7 +316,7 @@ class TestCLISettings:
         assert "72" in readme.read_text()
 
     def test_cli_overrides_color_thresholds(self, tmp_path):
-        readme = make_readme(tmp_path, ["### My Project"])
+        readme = make_readme(tmp_path, ["# My Project"])
         json_file = make_json(
             tmp_path, {"totals": {"percent_statements_covered_display": "100"}}
         )
@@ -335,7 +335,7 @@ class TestCLISettings:
         assert "blue" in readme.read_text()
 
     def test_cli_takes_priority_over_toml(self, config_dir, tmp_path):
-        readme = make_readme(tmp_path, ["### My Project"])
+        readme = make_readme(tmp_path, ["# My Project"])
         json_file = make_json(
             tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
         )
@@ -355,7 +355,7 @@ json_file = "toml_coverage.json"
         assert "![coverage]" in readme.read_text()
 
     def test_cli_takes_priority_over_env(self, tmp_path, monkeypatch):
-        readme = make_readme(tmp_path, ["### My Project"])
+        readme = make_readme(tmp_path, ["# My Project"])
         json_file = make_json(
             tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
         )
@@ -376,7 +376,7 @@ json_file = "toml_coverage.json"
         assert result.exit_code != 0
 
     def test_cli_error_on_invalid_percent_path(self, tmp_path):
-        readme = make_readme(tmp_path, ["### My Project"])
+        readme = make_readme(tmp_path, ["# My Project"])
         json_file = make_json(
             tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
         )
@@ -396,7 +396,7 @@ json_file = "toml_coverage.json"
 
 class TestApp:
     def test_invalid_key_causes_error(self, tmp_path):
-        readme = make_readme(tmp_path, ["### My Project"])
+        readme = make_readme(tmp_path, ["# My Project"])
         json_file = make_json(
             tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
         )
@@ -415,7 +415,7 @@ class TestApp:
         assert "Key 'total' not found" in result.output
 
     def test_invalid_path_causes_error(self, tmp_path):
-        readme = make_readme(tmp_path, ["### My Project"])
+        readme = make_readme(tmp_path, ["# My Project"])
         json_file = make_json(
             tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
         )
@@ -434,7 +434,7 @@ class TestApp:
         assert "Invalid path" in result.output
 
     def test_invalid_json_causes_error(self, tmp_path):
-        readme = make_readme(tmp_path, ["### My Project"])
+        readme = make_readme(tmp_path, ["# My Project"])
         json_file = make_json(
             tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
         )
@@ -453,7 +453,7 @@ class TestApp:
         assert "Invalid JSON" in result.output
 
     def test_prints_outcome(self, tmp_path):
-        readme = make_readme(tmp_path, ["### My Project"])
+        readme = make_readme(tmp_path, ["# My Project"])
         json_file = make_json(
             tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
         )
@@ -469,7 +469,7 @@ class TestApp:
         assert "Coverage badge updated" in result.output
 
     def test_no_output_in_quiet_mode(self, tmp_path):
-        readme = make_readme(tmp_path, ["### My Project"])
+        readme = make_readme(tmp_path, ["# My Project"])
         json_file = make_json(
             tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
         )
@@ -480,7 +480,7 @@ class TestApp:
         assert not result.output
 
     def test_version(self, tmp_path):
-        readme = make_readme(tmp_path, ["### My Project"])
+        readme = make_readme(tmp_path, ["# My Project"])
         json_file = make_json(
             tmp_path, {"totals": {"percent_statements_covered_display": "95"}}
         )

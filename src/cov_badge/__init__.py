@@ -252,7 +252,7 @@ def update_badge(
             if line.startswith("![coverage]"):
                 index = i
                 break
-            elif line.startswith("###"):
+            elif line.startswith("# "):
                 title = i
             elif line.startswith("!["):
                 last_badge = i
